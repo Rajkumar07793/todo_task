@@ -7,7 +7,7 @@
    - Xcode (if building for iOS)
 2. **Clone the repository**
    ```bash
-   git clone <repo-url>
+   git clone https://github.com/Rajkumar07793/todo_task
    cd todo_task
    ```
 3. **Install dependencies**
