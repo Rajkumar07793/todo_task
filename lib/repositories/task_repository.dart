@@ -1,6 +1,7 @@
-import 'package:todo_task/models/task.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+import 'package:todo_task/models/task.dart';
 
 class TaskRepository {
   final String baseUrl = 'https://jsonplaceholder.typicode.com';
