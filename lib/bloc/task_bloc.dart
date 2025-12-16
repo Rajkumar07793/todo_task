@@ -21,9 +21,10 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
 
   Future<void> _onLoadTasks(LoadTasks event, Emitter<TaskState> emit) async {
     emit(TaskLoading());
+    List<Task> cached = [];
     try {
       // Load cached tasks first
-      final cached = await localDb.getAllTasks();
+      cached = await localDb.getAllTasks();
       emit(TaskLoaded(cached));
       // Then fetch from API and sync
       final remote = await repository.fetchTasks();
@@ -33,7 +34,8 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
       }
       emit(TaskLoaded(remote));
     } catch (e) {
-      emit(TaskError(e.toString()));
+      // Emit error state but retain cached tasks for UI display
+      emit(TaskLoadError(e.toString(), cached));
     }
   }
 
@@ -81,6 +83,9 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
   Future<void> _onDeleteTask(DeleteTask event, Emitter<TaskState> emit) async {
     if (state is TaskLoaded) {
       final current = (state as TaskLoaded).tasks;
+      // Find the task being deleted to retrieve its title
+      final deletedTask = current.firstWhere((t) => t.id == event.taskId,
+          orElse: () => Task(id: event.taskId, title: '', completed: false));
       final optimisticList =
           current.where((t) => t.id != event.taskId).toList();
       emit(TaskLoaded(optimisticList));
@@ -88,6 +93,8 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
         await repository.deleteTask(event.taskId);
         await localDb.deleteTask(event.taskId);
         emit(TaskLoaded(optimisticList));
+        // Notify UI of successful deletion
+        emit(TaskDeleteSuccess('Task "${deletedTask.title}" deleted'));
       } catch (e) {
         // revert deletion
         emit(TaskLoaded(current));
